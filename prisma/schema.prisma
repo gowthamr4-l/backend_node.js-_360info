@@ -1,0 +1,416 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                Int      @id @default(autoincrement())
+  mobile            BigInt   @unique
+  countryCode       String   @default("+91")
+  email             String?  @unique
+  password          String?
+  refreshToken      String?
+  name              String?
+  isRealEstateAgent Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  properties ResidentialRentProperty[]
+  residentialResaleProperties ResidentialResaleProperty[]
+  residentialPgProperties ResidentialPgProperty[]
+  commercialRentProperties CommercialRentProperty[]
+  commercialSaleProperties CommercialSaleProperty[]
+  landPlotResaleProperties LandPlotResaleProperty[]
+  propertyLeads            PropertyLead[]
+}
+
+model ResidentialRentProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Property Details
+  propertyCategory String   @default("Residential")
+  adType           String   @default("Rent")
+  propertyType     String   // Apartment, Independent House/Villa, Gated Community Villa
+  bhkType          String   // 1 RK, 1 BHK, 2 BHK, etc.
+  totalFloor       String?
+  propertyAge      String?
+  facing           String?
+  builtUpArea      String?
+
+  // Locality Details
+  city      String?
+  locality  String?
+  landmark  String?
+
+  // Rental Details
+  expectedRent     String?
+  expectedDeposit  String?
+  rentNegotiable   Boolean @default(false)
+  depositNegotiable Boolean @default(false)
+  monthlyMaintenance String?
+  maintenanceExtra Boolean @default(false)
+  availableFrom    String?
+  preferredTenants String[] @default([])
+  furnishing       String?
+  parking          String?
+  leaseDuration    String?
+  lockinPeriod     String?
+
+  // Amenities
+  bathrooms     Int     @default(0)
+  balcony       Int     @default(0)
+  waterSupply   String?
+  gym           String?
+  petAllowed    String?
+  nonVegAllowed String?
+  gatedSecurity String?
+
+  // Description
+  description       String?
+  propertyCondition String?
+
+  // Schedule
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive      Boolean  @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  photos PropertyPhoto[]
+
+  @@index([userId])
+}
+
+model PropertyPhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     ResidentialRentProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  originalName String   // Original uploaded filename
+  mimeType     String   // e.g. image/jpeg
+  size         Int      // File size in bytes
+  url          String   // Path to stored file: uploads/properties/<uuid>.<ext>
+  displayOrder Int      @default(0)
+
+  createdAt    DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model ResidentialResaleProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyCategory String   @default("Residential")
+  adType           String   @default("Resale")
+  propertyType     String
+  bhkType          String
+  totalFloor       String?
+  propertyAge      String?
+  facing           String?
+  builtUpArea      String?
+
+  city      String?
+  locality  String?
+  landmark  String?
+
+  expectedPrice    String?
+  priceNegotiable  Boolean @default(false)
+  currentlyUnderLoan Boolean @default(false)
+  furnishing       String?
+  parking          String?
+
+  bathrooms     Int     @default(0)
+  balcony       Int     @default(0)
+  waterSupply   String?
+  gym           String?
+  petAllowed    String?
+  nonVegAllowed String?
+  gatedSecurity String?
+
+  description       String?
+  propertyCondition String?
+
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive       Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    ResidentialResalePhoto[]
+  @@index([userId])
+}
+
+model ResidentialResalePhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     ResidentialResaleProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([propertyId])
+}
+
+model ResidentialPgProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyCategory String   @default("Residential")
+  adType           String   @default("PG / Hostel")
+  pgRoomTypes      String[] @default([])
+
+  city      String?
+  locality  String?
+  landmark  String?
+
+  expectedRent     String?
+  expectedDeposit  String?
+  maintenanceExtra Boolean @default(false)
+  availableFrom    String?
+  preferredTenants String[] @default([])
+  preferredGuests  String?
+  foodIncluded     String?
+  pgRules          String[] @default([])
+  gateClosingTime  String?
+  furnishing       String?
+  parking          String?
+
+  description       String?
+
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive       Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    ResidentialPgPhoto[]
+  @@index([userId])
+}
+
+model ResidentialPgPhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     ResidentialPgProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([propertyId])
+}
+
+model CommercialRentProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyCategory String   @default("Commercial")
+  adType           String   @default("Rent")
+  propertyType     String
+  buildingType     String?
+  propertyAge      String?
+  floor            String?
+  totalFloor       String?
+  superBuiltUpArea String?
+
+  city      String?
+  locality  String?
+  landmark  String?
+
+  expectedRent     String?
+  expectedDeposit  String?
+  rentNegotiable   Boolean @default(false)
+  depositNegotiable Boolean @default(false)
+  monthlyMaintenance String?
+  maintenanceExtra Boolean @default(false)
+  availableFrom    String?
+  leaseDuration    String?
+  lockinPeriod     String?
+  furnishing       String?
+
+  bathrooms     Int     @default(0)
+  waterSupply   String?
+  gatedSecurity String?
+  otherFeatures String[] @default([])
+
+  description       String?
+
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive       Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    CommercialRentPhoto[]
+  @@index([userId])
+}
+
+model CommercialRentPhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     CommercialRentProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([propertyId])
+}
+
+model CommercialSaleProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyCategory String   @default("Commercial")
+  adType           String   @default("Sale")
+  propertyType     String
+  buildingType     String?
+  propertyAge      String?
+  floor            String?
+  totalFloor       String?
+  superBuiltUpArea String?
+  carpetArea       String?
+
+  city      String?
+  locality  String?
+  landmark  String?
+
+  expectedPrice    String?
+  priceNegotiable  Boolean @default(false)
+  currentlyUnderLoan Boolean @default(false)
+  furnishing       String?
+
+  bathrooms     Int     @default(0)
+  waterSupply   String?
+  gatedSecurity String?
+  otherFeatures String[] @default([])
+
+  description       String?
+  propertyCondition String?
+
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive       Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    CommercialSalePhoto[]
+  @@index([userId])
+}
+
+model CommercialSalePhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     CommercialSaleProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([propertyId])
+}
+
+model LandPlotResaleProperty {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyCategory String   @default("Land / Plot")
+  adType           String   @default("Resale")
+  plotArea         String?
+  plotLength       String?
+  plotWidth        String?
+  boundaryWall     String?
+  floorsAllowed    String?
+  cornerPlot       String?
+  gatedProject     String?
+
+  city      String?
+  locality  String?
+  landmark  String?
+
+  expectedPrice    String?
+  priceNegotiable  Boolean @default(false)
+  currentlyUnderLoan Boolean @default(false)
+
+  description       String?
+
+  whoWillShow    String?
+  secondaryNumber String?
+  availability   String?
+  startTime      String?
+  endTime        String?
+  availableAllDay Boolean @default(false)
+
+  isActive       Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    LandPlotResalePhoto[]
+  @@index([userId])
+}
+
+model LandPlotResalePhoto {
+  id           String   @id @default(uuid())
+  propertyId   String
+  property     LandPlotResaleProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([propertyId])
+}
+
+model PropertyLead {
+  id           String   @id @default(uuid())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId   String
+  propertyType String?
+  status       String   @default("Interested")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([userId])
+}
